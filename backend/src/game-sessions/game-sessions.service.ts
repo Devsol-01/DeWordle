@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -104,7 +105,11 @@ export class GameSessionsService {
     return [];
   }
 
-  public async submitGuess(sessionId: number, guess: string, user: User | null) {
+  public async submitGuess(
+    sessionId: number,
+    guess: string,
+    user: User | null,
+  ) {
     return this.submitGuessProvider.submitGuess(sessionId, guess, user);
   }
 
@@ -128,7 +133,7 @@ export class GameSessionsService {
       ? this.sessionRepo.findOne({
           where: { id: sessionId, user: { id: user.id } },
           relations: ['history'],
-          select: ['id', 'solution'],
+          select: ['id', 'solution', 'history'],
         })
       : this.sessionRepo
           .createQueryBuilder('session')
@@ -143,6 +148,11 @@ export class GameSessionsService {
 
     if (session.status !== GameSessionStatus.IN_PROGRESS)
       throw new BadRequestException('Session is not in progress');
+    //Validate the guess is already guessed or not !!
+    const previousGuess = session.history.map((x) => x.guess);
+    if (previousGuess.includes(guess)) {
+      throw new ConflictException('Word Already Guessed');
+    }
 
     // Validate the guess is a valid word
     const isValidWord = await this.wordValidationService.isValidWord(guess);
