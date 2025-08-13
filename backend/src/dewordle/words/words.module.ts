@@ -6,11 +6,12 @@ import { Word } from '../../entities/word.entity';
 import { WordSeedService } from '../../utils/word-seed.service';
 import { WordScheduler } from './word.scheduler';
 import { WordScoringProvider } from './providers/word-scoring-provider';
+import { WordValidationProvider } from './providers/word-validation-provider';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Word])],
   controllers: [WordsController],
-  providers: [WordsService, WordSeedService, WordScheduler, WordScoringProvider],
+  providers: [WordsService, WordSeedService, WordScheduler, WordScoringProvider, WordValidationProvider],
   exports: [WordsService, WordSeedService],
 })
 export class WordsModule {}
