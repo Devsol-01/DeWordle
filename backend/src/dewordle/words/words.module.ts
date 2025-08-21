@@ -8,6 +8,7 @@ import { WordScheduler } from './word.scheduler';
 import { WordScoringProvider } from './providers/word-scoring-provider';
 import { WordValidationProvider } from './providers/word-validation-provider';
 import { WordValidationService } from './word-validation.service';
+import { EnrichedWordsProvider } from './providers/enriched-words';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Word])],
@@ -18,6 +19,7 @@ import { WordValidationService } from './word-validation.service';
     WordScheduler,
     WordScoringProvider, WordValidationProvider,
     WordValidationService,
+    EnrichedWordsProvider,
   ],
   exports: [WordsService, WordSeedService, WordValidationService],
 })

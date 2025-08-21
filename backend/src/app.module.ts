@@ -12,6 +12,8 @@ import { GameSessionsModule } from './game-sessions/game-sessions.module';
 import { WordsModule } from './dewordle/words/words.module';
 import { ScheduleModule } from '@nestjs/schedule';
 // TODO: import { WordsModule } from './dewordle/words/words.module';
+import { MetricsModule } from './dewordle/metrics/metrics.module';
+import { MetricsController } from './dewordle/metrics/metrics.controller';
 
 @Module({
   imports: [
@@ -51,9 +53,10 @@ import { ScheduleModule } from '@nestjs/schedule';
     UserModule,
     GamesModule,
     WordsModule,
+    MetricsModule,
     // TODO: WordsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, MetricsController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -7,7 +7,7 @@ import { GameSessionStatus } from '../enums/sessionStatus';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameSession } from '../entities/game-session.entity';
-import { User } from 'src/auth/entities/user.entity';
+import { User } from '../../auth/entities/user.entity';
 
 @Injectable()
 export class submitGuessProvider {

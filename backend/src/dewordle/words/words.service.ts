@@ -14,6 +14,7 @@ import { Word as WordEntity } from '../../entities/word.entity';
 import { WordScoringProvider } from './providers/word-scoring-provider';
 import { CreateWordDto } from './dto/create-word.dto';
 import { WordValidationProvider } from './providers/word-validation-provider';
+import { EnrichedWordsProvider } from './providers/enriched-words';
 
 export interface Word {
   id: string;
@@ -34,6 +35,8 @@ export class WordsService {
     private readonly wordScoringProvider: WordScoringProvider,
 
     private readonly wordValidationProvider: WordValidationProvider,
+
+    private readonly enrichedWordsProvider: EnrichedWordsProvider,
   ) {
     // Seed the words when the service is initialized
     this.seedWords();
@@ -315,5 +318,9 @@ export class WordsService {
 
   public async validateWord(wordText: string) {
     return this.wordValidationProvider.validateWord(wordText);
+  }
+
+  public async enrichedWords(text: string) {
+    return this.enrichedWordsProvider.getWord(text);
   }
 }

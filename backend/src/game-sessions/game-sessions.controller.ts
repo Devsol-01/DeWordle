@@ -12,7 +12,7 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-guard.guard';
 import { Request } from 'express';
 import { GameSessionsService } from './game-sessions.service';
-import { User } from 'src/auth/entities/user.entity';
+import { User } from '../auth/entities/user.entity';
 import { GameSession } from './entities/game-session.entity';
 import { CreateGuessDto } from './dto/create-guess.dto';
 

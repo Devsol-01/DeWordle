@@ -6,15 +6,18 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  Param,
   Post,
 } from '@nestjs/common';
 import { WordsService } from './words.service';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { EnrichedWord } from '../../utils/dictionary.helper';
 import { WordScheduler } from './word.scheduler';
 import { CreateWordDto } from './dto/create-word.dto';
 import { WordResponseDto } from './dto/word-response.dto';
 import { WordValidationProvider } from './providers/word-validation-provider';
+import { EnrichedWordsProvider } from './providers/enriched-words';
+import { Word } from 'src/entities/word.entity';
 
 @Controller('words')
 export class WordsController {
@@ -23,7 +26,8 @@ export class WordsController {
   constructor(
     private readonly wordsService: WordsService,
     private readonly wordScheduler: WordScheduler,
-    private readonly wordValidationProvider: WordValidationProvider
+    private readonly wordValidationProvider: WordValidationProvider,
+    private readonly enrichedWordsProvider: EnrichedWordsProvider
   ) {}
 
   @Get('test')
@@ -144,5 +148,27 @@ export class WordsController {
   async validateWord(@Body('word') word: string) {
     // No validation logic here — service will handle errors
     return await this.wordValidationProvider.validateWord(word);
+  }
+
+  @Get(':text')
+  @ApiOperation({
+    summary: 'Get word details',
+    description: 'Fetches enriched details about a given word. If the word is not found, a 404 error is returned.',
+  })
+  @ApiParam({
+    name: 'text',
+    type: String,
+    description: 'The word to look up',
+    example: 'example',
+  })
+  @ApiOkResponse({
+    description: 'Successfully retrieved the word details',
+    type: Word,
+  })
+  @ApiNotFoundResponse({
+    description: 'The requested word was not found',
+  })
+  async getWord(@Param('text') text: string): Promise<Word> {
+    return this.enrichedWordsProvider.getWord(text);
   }
 }
