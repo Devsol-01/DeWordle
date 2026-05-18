@@ -16,5 +16,15 @@ cd soroban
 cargo check --workspace
 ```
 
+## Developer Commands
+```bash
+cd soroban
+./scripts/setup.sh
+make fmt
+make check
+make test
+make build-wasm
+```
+
 ## Contract Registry
 Contract IDs per network are managed in `config/contracts.<network>.json`.

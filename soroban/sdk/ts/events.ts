@@ -6,6 +6,13 @@ export interface DecodedEvent<T = unknown> {
   txHash?: string;
 }
 
+export type CoreGameEventTopic =
+  | "day_published"
+  | "session_started"
+  | "guess_submitted"
+  | "session_finalized"
+  | "streak_updated";
+
 export function parseCoreGameEvent(raw: {
   contractId: string;
   topic: string;
@@ -20,4 +27,14 @@ export function parseCoreGameEvent(raw: {
     ledger: raw.ledger,
     txHash: raw.txHash,
   };
+}
+
+export function isCoreGameEvent(topic: string): topic is CoreGameEventTopic {
+  return [
+    "day_published",
+    "session_started",
+    "guess_submitted",
+    "session_finalized",
+    "streak_updated",
+  ].includes(topic);
 }

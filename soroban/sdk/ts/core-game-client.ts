@@ -1,7 +1,7 @@
 import { Keypair, nativeToScVal } from "@stellar/stellar-sdk";
 import { Server } from "@stellar/stellar-sdk/rpc";
 import type { DayConfig, GuessResult, Session, SubmitGuessInput } from "./types";
-import type { SorobanNetworkConfig } from "./network";
+import type { ContractRegistry, SorobanNetworkConfig } from "./network";
 import { buildContractTx, simulateAndAssemble } from "./tx-builder";
 
 export interface CoreGameClientOptions {
@@ -14,6 +14,13 @@ export class CoreGameClient {
 
   constructor(private readonly options: CoreGameClientOptions) {
     this.server = new Server(options.network.rpcUrl);
+  }
+
+  static fromRegistry(network: SorobanNetworkConfig, registry: ContractRegistry) {
+    return new CoreGameClient({
+      contractId: registry.contracts.core_game,
+      network,
+    });
   }
 
   get contractId() {
