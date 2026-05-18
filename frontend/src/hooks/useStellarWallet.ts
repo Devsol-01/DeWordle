@@ -12,6 +12,8 @@ export function useStellarWallet() {
     disconnect,
     switchNetwork,
     setTxStatus,
+    signTransaction,
+    submitTransaction,
   } = useWalletContext();
 
   return {
@@ -23,5 +25,7 @@ export function useStellarWallet() {
     disconnect,
     switchNetwork,
     setTxStatus,
+    signTransaction,
+    submitTransaction,
   };
 }

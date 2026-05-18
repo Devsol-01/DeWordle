@@ -8,8 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getDefaultNetwork, STELLAR_NETWORKS, type StellarNetwork } from "@/lib/stellar/network";
+import {
+  getDefaultNetwork,
+  STELLAR_NETWORKS,
+  type StellarNetwork,
+} from "@/lib/stellar/network";
 import type { TxLifecycleStatus } from "@/lib/stellar/soroban";
+import { signWithFreighter, submitSignedTransaction } from "@/lib/stellar/wallet-flow";
 
 type WalletState = {
   connected: boolean;
@@ -20,10 +25,8 @@ type WalletState = {
   disconnect: () => Promise<void>;
   switchNetwork: (network: StellarNetwork) => Promise<void>;
   setTxStatus: (status: TxLifecycleStatus) => void;
-};
-
-type FreighterApiLike = {
-  getAddress?: () => Promise<{ address?: string; error?: string }>;
+  signTransaction: (transactionXdr: string) => Promise<string>;
+  submitTransaction: (signedTxXdr: string) => Promise<{ hash: string }>;
 };
 
 type WalletKitLike = {
@@ -37,7 +40,6 @@ type WalletKitLike = {
 
 declare global {
   interface Window {
-    freighterApi?: FreighterApiLike;
     stellarWalletsKit?: WalletKitLike;
   }
 }
@@ -70,19 +72,18 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
     }
 
     const freighter = window.freighterApi;
-    if (freighter?.getAddress) {
-      const response = await freighter.getAddress();
-      if (response.error || !response.address) {
-        throw new Error(response.error || "Failed to read Freighter address");
-      }
-      setConnected(true);
-      setAddress(response.address);
-      return;
+    const connectedState = await freighter?.isConnected?.();
+    if (!connectedState?.isConnected) {
+      throw new Error("Freighter is not connected");
     }
 
-    throw new Error(
-      "No wallet provider detected. Install Freighter or initialize Stellar Wallet Kit.",
-    );
+    const response = await freighter?.getAddress?.();
+    if (!response || response.error || !response.address) {
+      throw new Error(response?.error || "Failed to read Freighter address");
+    }
+
+    setConnected(true);
+    setAddress(response.address);
   }, []);
 
   const disconnect = useCallback(async () => {
@@ -100,6 +101,51 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
     setStatus(nextStatus);
   }, []);
 
+  const signTransaction = useCallback(
+    async (transactionXdr: string) => {
+      setStatus({ id: crypto.randomUUID(), state: "signing" });
+      try {
+        const signed = await signWithFreighter(
+          transactionXdr,
+          STELLAR_NETWORKS[network].passphrase,
+        );
+        setStatus({ id: crypto.randomUUID(), state: "success" });
+        return signed;
+      } catch (error) {
+        setStatus({
+          id: crypto.randomUUID(),
+          state: "error",
+          error: error instanceof Error ? error.message : "Unknown signing error",
+        });
+        throw error;
+      }
+    },
+    [network],
+  );
+
+  const submitTransaction = useCallback(
+    async (signedTxXdr: string) => {
+      setStatus({ id: crypto.randomUUID(), state: "submitting" });
+      try {
+        const submitted = await submitSignedTransaction(network, signedTxXdr);
+        setStatus({
+          id: crypto.randomUUID(),
+          state: "success",
+          txHash: submitted.hash,
+        });
+        return submitted;
+      } catch (error) {
+        setStatus({
+          id: crypto.randomUUID(),
+          state: "error",
+          error: error instanceof Error ? error.message : "Unknown submission error",
+        });
+        throw error;
+      }
+    },
+    [network],
+  );
+
   const value = useMemo(
     () => ({
       connected,
@@ -110,12 +156,24 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
       disconnect,
       switchNetwork,
       setTxStatus,
-      networkConfig: STELLAR_NETWORKS[network],
+      signTransaction,
+      submitTransaction,
     }),
-    [connected, address, network, status, connect, disconnect, switchNetwork, setTxStatus],
+    [
+      connected,
+      address,
+      network,
+      status,
+      connect,
+      disconnect,
+      switchNetwork,
+      setTxStatus,
+      signTransaction,
+      submitTransaction,
+    ],
   );
 
-  return <WalletContext.Provider value={value as WalletState}>{children}</WalletContext.Provider>;
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
 export function useWalletContext() {
