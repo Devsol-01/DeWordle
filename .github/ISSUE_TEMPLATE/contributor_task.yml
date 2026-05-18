@@ -1,0 +1,23 @@
+name: Contributor task
+description: Scoped implementation task for external contributors
+labels: ["type:task", "good first issue", "needs-triage"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why this task matters.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist of done conditions.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Implementation notes
+      description: Helpful pointers, files, and test hints.

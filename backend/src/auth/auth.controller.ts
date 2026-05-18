@@ -1,120 +1,268 @@
 import {
-  Param,
-  BadRequestException,
-  NotFoundException,
-  UnauthorizedException,
+  Controller,
+  Post,
   Get,
+  Body,
+  UseGuards,
+  Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiConflictResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
-import { AuthService } from './providers/auth.service';
-import { SignInDto } from './dto/create-auth.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { SignupDto } from './dto/sign-up.dto';
+import { JwtAuthGuard } from './guards/jwt-guard.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { EmailDto } from './dto/email.dto';
 
-@ApiTags('Auth') // Group all endpoints under the 'Auth' tag
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post('sign-in')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Sign in a user' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'User signed in successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Invalid credentials',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
-  })
-  @ApiBody({ type: SignInDto })
-  public SignIn(@Body() signinDto: SignInDto) {
-    return this.authService.SignIn(signinDto);
-  }
-
-  @Post('refresh-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh an access token' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Access token refreshed successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Invalid or expired refresh token',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
-  })
-  @ApiBody({ type: RefreshTokenDto })
-  public async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto);
-  }
-
-  @Get('verify-email/:token')
-  async verifyEmail(@Param('token') token: string) {
-    try {
-      return await this.authService.verifyEmail(token);
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || 'Invalid verification token',
-      );
-    }
-  }
-
-  @Post('resend-verification')
-  @HttpCode(HttpStatus.OK)
-  async resendVerificationEmail(@Body() emailDto: EmailDto) {
-    try {
-      return await this.authService.resendVerificationEmail(emailDto.email);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new BadRequestException(error.message);
-    }
-  }
+  constructor(private authService: AuthService) {}
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    try {
-      return await this.authService.forgotPassword(forgotPasswordDto.email);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new BadRequestException(error.message);
-    }
+  @ApiOperation({
+    summary: 'Request password reset',
+    description: 'Send a password reset email to the user.',
+  })
+  @ApiBody({
+    type: ForgotPasswordDto,
+    description: 'Forgot password request',
+    examples: {
+      example1: {
+        summary: 'Valid email',
+        value: { email: 'user@example.com' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'If that email exists, a reset link has been sent.',
+    schema: {
+      example: { message: 'If that email exists, a reset link has been sent.' },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['email must be an email'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto.email);
+    return { message: 'If that email exists, a reset link has been sent.' };
   }
 
-  @Post('reset-password/:token')
+  @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(
-    @Param('token') token: string,
-    @Body() resetPasswordDto: ResetPasswordDto,
-  ) {
-    try {
-      return await this.authService.resetPassword(
-        token,
-        resetPasswordDto.password,
-      );
-    } catch (error) {
-      throw new BadRequestException(error.message || 'Invalid reset token');
-    }
+  @ApiOperation({
+    summary: 'Reset password',
+    description: 'Reset user password using a valid token.',
+  })
+  @ApiBody({
+    type: ResetPasswordDto,
+    description: 'Reset password request',
+    examples: {
+      example1: {
+        summary: 'Valid reset',
+        value: { token: 'reset-token', newPassword: 'newStrongPassword123' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password has been reset successfully.',
+    schema: { example: { message: 'Password has been reset successfully.' } },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [
+          'token must be a string',
+          'newPassword must be longer than or equal to 8 characters',
+        ],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired reset token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Invalid or expired reset token',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Password has been reset successfully.' };
+  }
+
+  @Post('signup')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'User registration',
+    description: 'Register a new user with email, password, and wallet address',
+  })
+  @ApiBody({
+    type: SignupDto,
+    description: 'User registration data',
+    examples: {
+      example1: {
+        summary: 'Valid signup data',
+        value: {
+          email: 'user@example.com',
+          password: 'password123',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'User registered successfully',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: {
+          id: 1,
+          email: 'user@example.com',
+        },
+      },
+    },
+  })
+  @ApiConflictResponse({
+    description: 'Email or wallet address already exists',
+    schema: {
+      example: {
+        statusCode: 409,
+        message: 'Email already exists',
+        error: 'Conflict',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [
+          'email must be an email',
+          'password must be longer than or equal to 6 characters',
+        ],
+        error: 'Bad Request',
+      },
+    },
+  })
+  async signup(@Body() signupDto: SignupDto) {
+    return this.authService.signup(signupDto);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'User login',
+    description: 'Authenticate user with email and password',
+  })
+  @ApiBody({
+    type: LoginDto,
+    description: 'User login credentials',
+    examples: {
+      example1: {
+        summary: 'Valid login credentials',
+        value: {
+          email: 'user@example.com',
+          password: 'password123',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Login successful',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: {
+          id: 1,
+          email: 'user@example.com',
+          walletAddress: '0x742d35Cc6634C0532925a3b8D8Cc6f9b2F3d217',
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid credentials',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Invalid credentials',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['email must be an email', 'password should not be empty'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description: "Retrieve the authenticated user's profile information",
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User profile retrieved successfully',
+    schema: {
+      example: {
+        id: 1,
+        email: 'user@example.com',
+        walletAddress: '0x742d35Cc6634C0532925a3b8D8Cc6f9b2F3d217',
+        createdAt: '2024-01-15T10:30:00.000Z',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  async getProfile(@Request() req) {
+    return this.authService.getProfile(req.user.id);
   }
 }

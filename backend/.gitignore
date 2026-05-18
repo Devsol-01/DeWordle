@@ -2,7 +2,6 @@
 /dist
 /node_modules
 /build
-/http
 
 # Logs
 logs
@@ -38,6 +37,7 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
@@ -46,6 +46,9 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# folders 
+_test* 
 
 # Runtime data
 pids

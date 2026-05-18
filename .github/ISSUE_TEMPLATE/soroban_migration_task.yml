@@ -1,0 +1,44 @@
+name: Soroban migration task
+description: Structured task for Soroban migration contributors
+labels: ["area:soroban-core", "wave:ready", "needs-triage"]
+body:
+  - type: input
+    id: objective
+    attributes:
+      label: Objective
+      description: One-sentence goal of this task
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options: ["S", "M", "L", "XL"]
+    validations:
+      required: true
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      options: ["beginner", "intermediate", "advanced"]
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Exact files/modules contributors should touch
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Checklist of done conditions
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Relevant docs, specs, or prior PRs
