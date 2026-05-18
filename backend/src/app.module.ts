@@ -11,15 +11,15 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { GameSessionsModule } from './game-sessions/game-sessions.module';
 import { WordsModule } from './dewordle/words/words.module';
 import { ScheduleModule } from '@nestjs/schedule';
-// TODO: import { WordsModule } from './dewordle/words/words.module';
 import { MetricsModule } from './dewordle/metrics/metrics.module';
 import { MetricsController } from './dewordle/metrics/metrics.controller';
+import { IndexerModule } from './indexer/indexer.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env.development',
+      envFilePath: ['.env', '.env.development'],
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
@@ -39,7 +39,6 @@ import { MetricsController } from './dewordle/metrics/metrics.controller';
                 rejectUnauthorized: false,
               }
             : false,
-        // entities: [TestEntity],
         entities: ['dist/**/*.entity{.ts,.js}'],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -54,7 +53,7 @@ import { MetricsController } from './dewordle/metrics/metrics.controller';
     GamesModule,
     WordsModule,
     MetricsModule,
-    // TODO: WordsModule,
+    IndexerModule,
   ],
   controllers: [AppController, MetricsController],
   providers: [AppService],
