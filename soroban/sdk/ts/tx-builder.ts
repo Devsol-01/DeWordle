@@ -1,5 +1,11 @@
-import { Contract, TransactionBuilder, TimeoutInfinite, xdr } from "@stellar/stellar-sdk";
-import type { Server, Account } from "@stellar/stellar-sdk/rpc";
+import {
+  Contract,
+  TransactionBuilder,
+  TimeoutInfinite,
+  type Transaction,
+  xdr,
+} from "@stellar/stellar-sdk";
+import type { Account, Server, SendTransactionResponse } from "@stellar/stellar-sdk/rpc";
 import type { SorobanNetworkConfig } from "./network";
 
 export async function buildContractTx(params: {
@@ -25,7 +31,7 @@ export async function buildContractTx(params: {
 
 export async function simulateAndAssemble(params: {
   server: Server;
-  tx: ReturnType<typeof TransactionBuilder.prototype.build>;
+  tx: Transaction;
 }) {
   const simulated = await params.server.simulateTransaction(params.tx);
   if (simulated.error) {
@@ -34,4 +40,17 @@ export async function simulateAndAssemble(params: {
 
   const assembled = params.server.assembleTransaction(params.tx, simulated).build();
   return { simulated, assembled };
+}
+
+export async function submitTransaction(params: {
+  server: Server;
+  tx: Transaction;
+}): Promise<SendTransactionResponse> {
+  const sent = await params.server.sendTransaction(params.tx);
+
+  if (sent.status === "ERROR") {
+    throw new Error(sent.errorResultXdr || "Transaction submit failed");
+  }
+
+  return sent;
 }

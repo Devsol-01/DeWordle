@@ -1,3 +1,5 @@
+import type { AssembledTransaction, SimulateTransactionResponse } from "@stellar/stellar-sdk/rpc";
+
 export type SessionStatus = "InProgress" | "Won" | "Lost" | "Finalized";
 
 export interface DayConfig {
@@ -32,4 +34,9 @@ export interface SubmitGuessInput {
   guessCommitment: string;
   outcomeCode: number;
   isCorrect: boolean;
+}
+
+export interface TxBuildResult {
+  simulated: SimulateTransactionResponse;
+  assembled: AssembledTransaction;
 }

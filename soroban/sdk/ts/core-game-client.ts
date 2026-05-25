@@ -1,7 +1,14 @@
 import { Keypair, nativeToScVal } from "@stellar/stellar-sdk";
 import { Server } from "@stellar/stellar-sdk/rpc";
-import type { DayConfig, GuessResult, Session, SubmitGuessInput } from "./types";
+import type {
+  DayConfig,
+  GuessResult,
+  Session,
+  SubmitGuessInput,
+  TxBuildResult,
+} from "./types";
 import type { ContractRegistry, SorobanNetworkConfig } from "./network";
+import { resolveContractId } from "./registry";
 import { buildContractTx, simulateAndAssemble } from "./tx-builder";
 
 export interface CoreGameClientOptions {
@@ -18,7 +25,7 @@ export class CoreGameClient {
 
   static fromRegistry(network: SorobanNetworkConfig, registry: ContractRegistry) {
     return new CoreGameClient({
-      contractId: registry.contracts.core_game,
+      contractId: resolveContractId(registry, "core_game"),
       network,
     });
   }
@@ -27,7 +34,11 @@ export class CoreGameClient {
     return this.options.contractId;
   }
 
-  async buildCreateSessionTx(sourcePublicKey: string, dayId: number, nonce: number) {
+  async buildCreateSessionTx(
+    sourcePublicKey: string,
+    dayId: number,
+    nonce: number,
+  ): Promise<TxBuildResult> {
     const account = await this.server.getAccount(sourcePublicKey);
 
     const tx = await buildContractTx({
@@ -42,7 +53,10 @@ export class CoreGameClient {
     return simulateAndAssemble({ server: this.server, tx });
   }
 
-  async buildSubmitGuessTx(sourcePublicKey: string, input: SubmitGuessInput) {
+  async buildSubmitGuessTx(
+    sourcePublicKey: string,
+    input: SubmitGuessInput,
+  ): Promise<TxBuildResult> {
     const account = await this.server.getAccount(sourcePublicKey);
 
     const tx = await buildContractTx({

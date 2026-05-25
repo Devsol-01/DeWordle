@@ -3,7 +3,11 @@
 use dewordle_auth::{require_admin, set_admin};
 use dewordle_types::{DayConfig, GuessResult, PlayerStreak, Session, SessionStatus};
 use dewordle_utils::current_day_id;
-use soroban_sdk::{contract, contractimpl, contracttype, panic_with_error, Address, BytesN, Env, Symbol};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, panic_with_error, Address, BytesN, Env,
+    Symbol,
+};
+use soroban_sdk::xdr::ToXdr;
 
 #[derive(Clone)]
 #[contracttype]
@@ -12,10 +16,12 @@ enum DataKey {
     Session(BytesN<32>),
     SessionNonce(Address, u32),
     Streak(Address),
+    Paused,
 }
 
 #[derive(Clone)]
-#[contracttype]
+#[contracterror]
+#[repr(u32)]
 pub enum CoreGameError {
     AlreadyInitialized = 1,
     InvalidMaxAttempts = 2,
@@ -28,8 +34,8 @@ pub enum CoreGameError {
     SessionAlreadyFinalized = 9,
     AttemptLimitReached = 10,
     SessionStillInProgress = 11,
-    InvalidPlayer = 12,
     InvalidCommitment = 13,
+    ContractPaused = 14,
 }
 
 #[contract]
@@ -43,7 +49,23 @@ impl CoreGameContract {
         }
 
         set_admin(&env, &admin);
-        env.storage().instance().set(&Symbol::new(&env, "initialized"), &true);
+        env.storage()
+            .instance()
+            .set(&Symbol::new(&env, "initialized"), &true);
+        env.storage().instance().set(&DataKey::Paused, &false);
+        env.events()
+            .publish((Symbol::new(&env, "core_game_initialized"),), admin);
+    }
+
+    pub fn pause(env: Env, paused: bool) {
+        require_admin(&env);
+        env.storage().instance().set(&DataKey::Paused, &paused);
+        env.events()
+            .publish((Symbol::new(&env, "core_game_paused"),), paused);
+    }
+
+    pub fn is_paused(env: Env) -> bool {
+        env.storage().instance().get(&DataKey::Paused).unwrap_or(false)
     }
 
     pub fn set_day_config(
@@ -67,12 +89,16 @@ impl CoreGameContract {
             published: true,
         };
 
-        env.storage().persistent().set(&DataKey::DayConfig(day_id), &config);
+        env.storage()
+            .persistent()
+            .set(&DataKey::DayConfig(day_id), &config);
 
-        env.events().publish((Symbol::new(&env, "day_published"), day_id), config);
+        env.events()
+            .publish((Symbol::new(&env, "day_published"), day_id), config);
     }
 
     pub fn create_session(env: Env, player: Address, day_id: u32, nonce: u32) -> BytesN<32> {
+        Self::require_not_paused(&env);
         player.require_auth();
         let config = Self::get_day_config_internal(&env, day_id);
 
@@ -103,7 +129,9 @@ impl CoreGameContract {
             updated_at: env.ledger().timestamp(),
         };
 
-        env.storage().persistent().set(&DataKey::Session(session_id.clone()), &session);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Session(session_id.clone()), &session);
         env.storage().persistent().set(&nonce_key, &true);
 
         env.events().publish(
@@ -122,6 +150,7 @@ impl CoreGameContract {
         outcome_code: u32,
         is_correct: bool,
     ) -> GuessResult {
+        Self::require_not_paused(&env);
         player.require_auth();
         if guess_commitment == BytesN::from_array(&env, &[0; 32]) {
             panic_with_error!(&env, CoreGameError::InvalidCommitment);
@@ -156,7 +185,9 @@ impl CoreGameContract {
             is_correct,
         };
 
-        env.storage().persistent().set(&DataKey::Session(session_id.clone()), &session);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Session(session_id.clone()), &session);
 
         env.events().publish(
             (Symbol::new(&env, "guess_submitted"), session_id),
@@ -167,6 +198,7 @@ impl CoreGameContract {
     }
 
     pub fn finalize_session(env: Env, player: Address, session_id: BytesN<32>) -> Session {
+        Self::require_not_paused(&env);
         player.require_auth();
         let mut session = Self::get_session_internal(&env, &session_id);
 
@@ -185,11 +217,14 @@ impl CoreGameContract {
         session.finalized = true;
         session.status = SessionStatus::Finalized;
         session.updated_at = env.ledger().timestamp();
-        env.storage().persistent().set(&DataKey::Session(session_id.clone()), &session);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Session(session_id.clone()), &session);
 
         Self::update_streak(&env, &player);
 
-        env.events().publish((Symbol::new(&env, "session_finalized"), session_id), player);
+        env.events()
+            .publish((Symbol::new(&env, "session_finalized"), session_id), player);
 
         session
     }
@@ -203,11 +238,28 @@ impl CoreGameContract {
     }
 
     pub fn get_streak(env: Env, player: Address) -> PlayerStreak {
-        env.storage().persistent().get(&DataKey::Streak(player)).unwrap_or(PlayerStreak {
-            current: 0,
-            max: 0,
-            last_day_played: 0,
-        })
+        env.storage()
+            .persistent()
+            .get(&DataKey::Streak(player))
+            .unwrap_or(PlayerStreak {
+                current: 0,
+                max: 0,
+                last_day_played: 0,
+            })
+    }
+
+    pub fn is_nonce_used(env: Env, player: Address, nonce: u32) -> bool {
+        env.storage()
+            .persistent()
+            .has(&DataKey::SessionNonce(player, nonce))
+    }
+
+    pub fn version(env: Env) -> u32 {
+        env.events().publish(
+            (Symbol::new(&env, "module"), Symbol::new(&env, "core_game")),
+            3u32,
+        );
+        3
     }
 
     fn get_day_config_internal(env: &Env, day_id: u32) -> DayConfig {
@@ -233,7 +285,8 @@ impl CoreGameContract {
             env.ledger().timestamp(),
         );
 
-        env.crypto().sha256(&preimage.into_val(env))
+        let preimage_bytes = preimage.to_xdr(env);
+        env.crypto().sha256(&preimage_bytes).into()
     }
 
     fn update_streak(env: &Env, player: &Address) {
@@ -260,8 +313,32 @@ impl CoreGameContract {
         }
 
         streak.last_day_played = day;
-        env.storage().persistent().set(&DataKey::Streak(player.clone()), &streak);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Streak(player.clone()), &streak);
 
-        env.events().publish((Symbol::new(env, "streak_updated"), player), streak);
+        env.events()
+            .publish((Symbol::new(env, "streak_updated"), player), streak);
+    }
+
+    fn require_not_paused(env: &Env) {
+        if env.storage().instance().get(&DataKey::Paused).unwrap_or(false) {
+            panic_with_error!(env, CoreGameError::ContractPaused);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use soroban_sdk::testutils::Address as _;
+
+    #[test]
+    fn init_sets_unpaused_state() {
+        let env = Env::default();
+        let admin = Address::generate(&env);
+
+        CoreGameContract::init(env.clone(), admin);
+        assert!(!CoreGameContract::is_paused(env));
     }
 }
