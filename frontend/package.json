@@ -8,6 +8,24 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "jest --no-coverage"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "transform": {
+      "^.+\\.tsx?$": ["ts-jest", {
+        "tsconfig": {
+          "module": "commonjs",
+          "moduleResolution": "node",
+          "jsx": "react"
+        }
+      }]
+    },
+    "testMatch": ["**/*.spec.ts", "**/*.spec.tsx"]
     "test": "vitest run",
     "test:watch": "vitest"
   },

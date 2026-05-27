@@ -4,14 +4,37 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { nextLifecycle, reconcileGameplayState, type GameplayTxSnapshot } from "@/lib/stellar/gameplay-flow";
 
+export class StaleContextError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StaleContextError";
+  }
+}
+
 export function useGameplayTx() {
   const wallet = useStellarWallet();
   const [snapshot, setSnapshot] = useState<GameplayTxSnapshot>({});
   // In-flight lock: prevents duplicate submissions
   const inFlightRef = useRef(false);
 
+  const networkMismatch = useMemo(() => {
+    const configured = process.env.NEXT_PUBLIC_STELLAR_NETWORK;
+    if (!configured) return false;
+    return configured !== wallet.network;
+  }, [wallet.network]);
+
   const execute = useCallback(
     async (transactionXdr: string, optimisticSessionId?: string) => {
+      // Pre-submit stale context guards
+      if (!wallet.connected || !wallet.address) {
+        throw new StaleContextError("Wallet is not connected. Please reconnect before submitting.");
+      }
+      if (networkMismatch) {
+        throw new StaleContextError(
+          `Network mismatch: app expects '${process.env.NEXT_PUBLIC_STELLAR_NETWORK}' but wallet is on '${wallet.network}'. Please switch networks.`,
+        );
+      }
+
       if (inFlightRef.current) {
         throw new Error("A transaction is already in progress. Please wait.");
       }
@@ -53,7 +76,7 @@ export function useGameplayTx() {
         inFlightRef.current = false;
       }
     },
-    [wallet],
+    [wallet, networkMismatch],
   );
 
   /**
