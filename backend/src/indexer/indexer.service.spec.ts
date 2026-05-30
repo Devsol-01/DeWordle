@@ -9,6 +9,7 @@ const makeCursor = (lastLedger = 0) => ({
   lastLedger,
   lastTxHash: '',
   lastEventIndex: 0,
+  updatedAt: new Date('2026-05-29T12:34:56.000Z'),
 });
 
 const makeService = (overrides: {
@@ -42,6 +43,47 @@ const makeService = (overrides: {
 
   return { svc, cursorService, eventProcessor };
 };
+
+describe('IndexerService.getLagSnapshot', () => {
+  it('returns cursor snapshot, replay counters, and derived lag fields', async () => {
+    const { svc } = makeService({ rpcUrl: 'http://rpc', network: 'mainnet', cursorLedger: 40 });
+    svc.metrics.replaySkips = 3;
+    svc.metrics.ingestedTotal = 12;
+    svc.metrics.projectionErrors = 1;
+    svc.metrics.pollCycles = 7;
+
+    jest.spyOn(svc, 'fetchLatestLedger').mockResolvedValue(52);
+
+    await expect(svc.getLagSnapshot()).resolves.toEqual({
+      network: 'mainnet',
+      streamKey: INDEXER_STREAM_CORE_GAME,
+      cursor: {
+        lastLedger: 40,
+        lastTxHash: '',
+        lastEventIndex: 0,
+        updatedAt: new Date('2026-05-29T12:34:56.000Z'),
+      },
+      lastProcessedTxHash: '',
+      networkLatestLedger: 52,
+      lagLedgers: 12,
+      replaySkips: 3,
+      ingestedTotal: 12,
+      projectionErrors: 1,
+      pollCycles: 7,
+    });
+  });
+
+  it('returns null lag fields when RPC URL is not configured', async () => {
+    const { svc } = makeService({ rpcUrl: '', network: 'testnet', cursorLedger: 9 });
+    const latestLedgerSpy = jest.spyOn(svc, 'fetchLatestLedger');
+
+    const snapshot = await svc.getLagSnapshot();
+
+    expect(snapshot.networkLatestLedger).toBeNull();
+    expect(snapshot.lagLedgers).toBeNull();
+    expect(latestLedgerSpy).not.toHaveBeenCalled();
+  });
+});
 
 describe('IndexerService.poll', () => {
   it('returns 0 and warns when RPC env vars are missing', async () => {
