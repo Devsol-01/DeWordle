@@ -36,7 +36,7 @@ jobs:
 
       - name: Generate reviewer load heatmap
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPO: ${{ github.repository }}
           LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '30' }}
           OUTPUT_JSON: ${{ github.event.inputs.output_json || 'false' }}

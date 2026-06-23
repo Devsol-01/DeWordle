@@ -15,6 +15,7 @@ permissions:
 jobs:
   lockfile-guard:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Check frontend lockfile is in sync with package.json
