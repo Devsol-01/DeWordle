@@ -40,7 +40,7 @@ jobs:
 
       - name: Compile release-note draft
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPO: ${{ github.repository }}
           SINCE_TAG: ${{ github.event.inputs.since_tag || github.event.ref }}
           TARGET_BRANCH: ${{ github.event.inputs.target_branch || 'main' }}
