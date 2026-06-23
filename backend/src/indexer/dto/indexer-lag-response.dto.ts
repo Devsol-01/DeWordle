@@ -46,13 +46,15 @@ export class IndexerLagResponseDto {
   cursor: IndexerCursorSnapshotDto;
 
   @ApiProperty({
-    description: 'Convenience field mirroring cursor.lastTxHash for dashboards.',
+    description:
+      'Convenience field mirroring cursor.lastTxHash for dashboards.',
     example: '7f0c8a32b6f4d10d2a9ecb90df7c8f4af1cfc9890c17cdb7d07af01d9b83f1c2',
   })
   lastProcessedTxHash: string;
 
   @ApiPropertyOptional({
-    description: 'Latest ledger sequence reported by Soroban RPC for the configured network.',
+    description:
+      'Latest ledger sequence reported by Soroban RPC for the configured network.',
     example: 248145,
     nullable: true,
   })

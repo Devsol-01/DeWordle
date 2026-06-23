@@ -24,7 +24,11 @@ const BASE = {
   observedAt: new Date('2024-01-01T00:00:00Z'),
 };
 
-const FIXTURES: Array<{ label: string; raw: Parameters<EventNormalizerService['normalize']>[1]; expectedTopic: string }> = [
+const FIXTURES: Array<{
+  label: string;
+  raw: Parameters<EventNormalizerService['normalize']>[1];
+  expectedTopic: string;
+}> = [
   {
     label: 'core_game: session_started',
     raw: {
@@ -45,7 +49,12 @@ const FIXTURES: Array<{ label: string; raw: Parameters<EventNormalizerService['n
       txHash: BASE.txHash,
       ledger: BASE.ledger,
       eventIndex: 1,
-      payload: { sessionId: 'sess-001', player: 'GABC', attempt: 1, commitment: 'deadbeef' },
+      payload: {
+        sessionId: 'sess-001',
+        player: 'GABC',
+        attempt: 1,
+        commitment: 'deadbeef',
+      },
     },
     expectedTopic: 'guess_submitted',
   },
@@ -57,7 +66,13 @@ const FIXTURES: Array<{ label: string; raw: Parameters<EventNormalizerService['n
       txHash: BASE.txHash,
       ledger: BASE.ledger,
       eventIndex: 2,
-      payload: { sessionId: 'sess-001', player: 'GABC', dayId: 42, status: 'Won', attemptsUsed: 3 },
+      payload: {
+        sessionId: 'sess-001',
+        player: 'GABC',
+        dayId: 42,
+        status: 'Won',
+        attemptsUsed: 3,
+      },
     },
     expectedTopic: 'session_finalized',
   },
@@ -109,8 +124,8 @@ describe('EventNormalizerService — fixture conformance', () => {
         // Actionable diagnostic on schema drift
         throw new Error(
           `[SCHEMA DRIFT] Fixture '${fixture.label}' failed isValid().\n` +
-          `  topic='${event.topic}' contractId='${event.contractId}' ledger=${event.ledger}\n` +
-          `  Check ALLOWED_TOPICS in event-normalizer.service.ts or fixture payload size.`,
+            `  topic='${event.topic}' contractId='${event.contractId}' ledger=${event.ledger}\n` +
+            `  Check ALLOWED_TOPICS in event-normalizer.service.ts or fixture payload size.`,
         );
       }
       expect(valid).toBe(true);
@@ -139,7 +154,10 @@ describe('ProjectionService — fixture conformance', () => {
     const mockRepo = {
       findOne: jest.fn().mockResolvedValue(null),
       create: jest.fn((data: unknown) => data),
-      save: jest.fn(async (data: unknown) => { saved.push(data); return data; }),
+      save: jest.fn(async (data: unknown) => {
+        saved.push(data);
+        return data;
+      }),
     };
     // Bypass DI: inject mock repo directly
     const service = new ProjectionService(mockRepo as never);
@@ -155,7 +173,13 @@ describe('ProjectionService — fixture conformance', () => {
       txHash: BASE.txHash,
       ledger: BASE.ledger,
       eventIndex: 2,
-      payload: { sessionId: 'sess-001', player: 'GABC', dayId: 42, status: 'Won', attemptsUsed: 3 },
+      payload: {
+        sessionId: 'sess-001',
+        player: 'GABC',
+        dayId: 42,
+        status: 'Won',
+        attemptsUsed: 3,
+      },
       observedAt: BASE.observedAt,
     };
 
@@ -204,12 +228,21 @@ describe('ProjectionService — fixture conformance', () => {
       txHash: BASE.txHash,
       ledger: BASE.ledger,
       eventIndex: 2,
-      payload: { sessionId: 'sess-001', player: 'GABC', dayId: 42, status: 'Won', attemptsUsed: 3 },
+      payload: {
+        sessionId: 'sess-001',
+        player: 'GABC',
+        dayId: 42,
+        status: 'Won',
+        attemptsUsed: 3,
+      },
       observedAt: BASE.observedAt,
     };
 
     await service.apply(event);
-    const createArg = mockRepo.create.mock.calls[0][0] as Record<string, unknown>;
+    const createArg = mockRepo.create.mock.calls[0][0] as Record<
+      string,
+      unknown
+    >;
     expect(createArg['id']).toBe('existing-id'); // preserves existing id → upsert
   });
 });

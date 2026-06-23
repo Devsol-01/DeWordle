@@ -21,8 +21,8 @@ function makeEvent(ledger: number, idx: number): IngestedEventDto {
   };
 }
 
-const CYCLES      = 50;   // number of ingest rounds
-const BATCH_SIZE  = 100;  // events per round (well below 500-buffer limit so queue drains each round)
+const CYCLES = 50; // number of ingest rounds
+const BATCH_SIZE = 100; // events per round (well below 500-buffer limit so queue drains each round)
 const MAX_ERROR_RATE = 0; // no rejections expected when draining each cycle
 
 describe('IndexerQueueService – soak profile', () => {
@@ -33,9 +33,9 @@ describe('IndexerQueueService – soak profile', () => {
   });
 
   it('sustains throughput across many ingest cycles with zero rejection', async () => {
-    let totalEnqueued  = 0;
-    let totalRejected  = 0;
-    let ledger         = 1;
+    let totalEnqueued = 0;
+    let totalRejected = 0;
+    let ledger = 1;
     const lagSamples: number[] = [];
 
     for (let cycle = 0; cycle < CYCLES; cycle++) {
@@ -43,7 +43,8 @@ describe('IndexerQueueService – soak profile', () => {
 
       for (let i = 0; i < BATCH_SIZE; i++, ledger++) {
         const ok = await service.enqueue(makeEvent(ledger, i));
-        if (ok) totalEnqueued++; else totalRejected++;
+        if (ok) totalEnqueued++;
+        else totalRejected++;
       }
 
       const drained = service.drain();
@@ -56,13 +57,24 @@ describe('IndexerQueueService – soak profile', () => {
     }
 
     const errorRate = totalRejected / (totalEnqueued + totalRejected);
-    const avgLag    = lagSamples.reduce((a, b) => a + b, 0) / lagSamples.length;
-    const maxLag    = Math.max(...lagSamples);
+    const avgLag = lagSamples.reduce((a, b) => a + b, 0) / lagSamples.length;
+    const maxLag = Math.max(...lagSamples);
 
     // soak report
-    console.log('[soak] throughput:', totalEnqueued, 'events over', CYCLES, 'cycles');
+    console.log(
+      '[soak] throughput:',
+      totalEnqueued,
+      'events over',
+      CYCLES,
+      'cycles',
+    );
     console.log('[soak] error rate:', (errorRate * 100).toFixed(2) + '%');
-    console.log('[soak] avg lag/cycle (ms):', avgLag.toFixed(2), '  max:', maxLag);
+    console.log(
+      '[soak] avg lag/cycle (ms):',
+      avgLag.toFixed(2),
+      '  max:',
+      maxLag,
+    );
 
     expect(errorRate).toBe(MAX_ERROR_RATE);
     expect(totalEnqueued).toBe(CYCLES * BATCH_SIZE);

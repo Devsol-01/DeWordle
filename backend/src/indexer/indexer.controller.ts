@@ -31,7 +31,13 @@ export class IndexerController {
   }
 
   @Post('ingest')
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }))
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  )
   async ingest(@Body() event: IngestedEventDto) {
     await this.indexerService.ingest({
       ...event,

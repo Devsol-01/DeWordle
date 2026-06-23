@@ -1,6 +1,9 @@
 import { IndexerWorkerService } from './indexer-worker.service';
 import { ReplayAlertService } from './replay-alert.service';
-import { INDEXER_NETWORK_TESTNET, INDEXER_STREAM_CORE_GAME } from '../indexer.constants';
+import {
+  INDEXER_NETWORK_TESTNET,
+  INDEXER_STREAM_CORE_GAME,
+} from '../indexer.constants';
 
 describe('IndexerWorkerService', () => {
   it('includes replay alert tags in the worker tick log payload', async () => {
@@ -8,7 +11,12 @@ describe('IndexerWorkerService', () => {
     const loggerWarn = jest.fn();
 
     const indexerService = {
-      metrics: { replaySkips: 6, ingestedTotal: 10, projectionErrors: 0, pollCycles: 3 },
+      metrics: {
+        replaySkips: 6,
+        ingestedTotal: 10,
+        projectionErrors: 0,
+        pollCycles: 3,
+      },
       poll: jest.fn().mockResolvedValue(0),
     } as any;
 
@@ -40,8 +48,10 @@ describe('IndexerWorkerService', () => {
       replayAlertService,
     );
 
-    (worker as unknown as { logger: { log: typeof loggerLog } }).logger.log = loggerLog;
-    (worker as unknown as { logger: { warn: typeof loggerWarn } }).logger.warn = loggerWarn;
+    (worker as unknown as { logger: { log: typeof loggerLog } }).logger.log =
+      loggerLog;
+    (worker as unknown as { logger: { warn: typeof loggerWarn } }).logger.warn =
+      loggerWarn;
 
     await worker.tick();
 

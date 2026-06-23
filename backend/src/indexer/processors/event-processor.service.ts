@@ -18,7 +18,10 @@ export class EventProcessorService {
     private readonly projectionService: ProjectionService,
   ) {}
 
-  async process(event: IngestedEventDto, context?: IndexerLogContext): Promise<boolean> {
+  async process(
+    event: IngestedEventDto,
+    context?: IndexerLogContext,
+  ): Promise<boolean> {
     const exists = await this.eventsRepo.findOne({
       where: {
         network: event.network,

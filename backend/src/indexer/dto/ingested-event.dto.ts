@@ -5,7 +5,6 @@ import {
   IsInt,
   Min,
   IsObject,
-  IsDateString,
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -41,4 +40,3 @@ export class IngestedEventDto {
   @Type(() => Date)
   observedAt: Date;
 }
-

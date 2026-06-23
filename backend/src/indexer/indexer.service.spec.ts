@@ -21,13 +21,16 @@ const makeService = (overrides: {
 }) => {
   const configGet = jest.fn((key: string) => {
     if (key === 'SOROBAN_RPC_URL') return overrides.rpcUrl ?? '';
-    if (key === 'SOROBAN_CORE_GAME_CONTRACT_ID') return overrides.contractId ?? '';
+    if (key === 'SOROBAN_CORE_GAME_CONTRACT_ID')
+      return overrides.contractId ?? '';
     if (key === 'SOROBAN_NETWORK') return overrides.network ?? 'testnet';
     return undefined;
   });
 
   const cursorService = {
-    getOrCreate: jest.fn().mockResolvedValue(makeCursor(overrides.cursorLedger ?? 0)),
+    getOrCreate: jest
+      .fn()
+      .mockResolvedValue(makeCursor(overrides.cursorLedger ?? 0)),
     checkpoint: jest.fn().mockResolvedValue(undefined),
   } as unknown as CursorService;
 
@@ -48,7 +51,11 @@ const makeService = (overrides: {
 
 describe('IndexerService.getLagSnapshot', () => {
   it('returns cursor snapshot, replay counters, and derived lag fields', async () => {
-    const { svc } = makeService({ rpcUrl: 'http://rpc', network: 'mainnet', cursorLedger: 40 });
+    const { svc } = makeService({
+      rpcUrl: 'http://rpc',
+      network: 'mainnet',
+      cursorLedger: 40,
+    });
     svc.metrics.replaySkips = 3;
     svc.metrics.ingestedTotal = 12;
     svc.metrics.projectionErrors = 1;
@@ -76,7 +83,11 @@ describe('IndexerService.getLagSnapshot', () => {
   });
 
   it('returns null lag fields when RPC URL is not configured', async () => {
-    const { svc } = makeService({ rpcUrl: '', network: 'testnet', cursorLedger: 9 });
+    const { svc } = makeService({
+      rpcUrl: '',
+      network: 'testnet',
+      cursorLedger: 9,
+    });
     const latestLedgerSpy = jest.spyOn(svc, 'fetchLatestLedger');
 
     const snapshot = await svc.getLagSnapshot();
@@ -102,8 +113,22 @@ describe('IndexerService.poll', () => {
     });
 
     const rawEvents = [
-      { contractId: 'CABC', topic: 'session_finalized', txHash: 'tx1', ledger: 12, eventIndex: 1, payload: {} },
-      { contractId: 'CABC', topic: 'session_finalized', txHash: 'tx1', ledger: 11, eventIndex: 0, payload: {} },
+      {
+        contractId: 'CABC',
+        topic: 'session_finalized',
+        txHash: 'tx1',
+        ledger: 12,
+        eventIndex: 1,
+        payload: {},
+      },
+      {
+        contractId: 'CABC',
+        topic: 'session_finalized',
+        txHash: 'tx1',
+        ledger: 11,
+        eventIndex: 0,
+        payload: {},
+      },
     ];
 
     jest.spyOn(svc, 'fetchEvents').mockResolvedValue(rawEvents);
@@ -115,7 +140,9 @@ describe('IndexerService.poll', () => {
     const calls = (eventProcessor.process as jest.Mock).mock.calls;
     expect(calls[0][0].ledger).toBe(11);
     expect(calls[1][0].ledger).toBe(12);
-    expect(calls[0][1]).toEqual(expect.objectContaining({ correlationId: expect.any(String) }));
+    expect(calls[0][1]).toEqual(
+      expect.objectContaining({ correlationId: expect.any(String) }),
+    );
     expect(calls[1][1]).toEqual(calls[0][1]);
   });
 
@@ -125,9 +152,17 @@ describe('IndexerService.poll', () => {
       contractId: 'CABC',
     });
 
-    jest.spyOn(svc, 'fetchEvents').mockResolvedValue([
-      { contractId: '', topic: 'session_finalized', txHash: 'tx1', ledger: 5, eventIndex: 0 },
-    ]);
+    jest
+      .spyOn(svc, 'fetchEvents')
+      .mockResolvedValue([
+        {
+          contractId: '',
+          topic: 'session_finalized',
+          txHash: 'tx1',
+          ledger: 5,
+          eventIndex: 0,
+        },
+      ]);
 
     const count = await svc.poll();
     expect(count).toBe(0);
@@ -135,7 +170,11 @@ describe('IndexerService.poll', () => {
   });
 
   it('passes afterLedger from cursor to fetchEvents', async () => {
-    const { svc } = makeService({ rpcUrl: 'http://rpc', contractId: 'CABC', cursorLedger: 42 });
+    const { svc } = makeService({
+      rpcUrl: 'http://rpc',
+      contractId: 'CABC',
+      cursorLedger: 42,
+    });
     const fetchSpy = jest.spyOn(svc, 'fetchEvents').mockResolvedValue([]);
 
     await svc.poll();
@@ -144,11 +183,17 @@ describe('IndexerService.poll', () => {
   });
 
   it('uses INDEXER_STREAM_CORE_GAME stream key for cursor', async () => {
-    const { svc, cursorService } = makeService({ rpcUrl: 'http://rpc', contractId: 'CABC' });
+    const { svc, cursorService } = makeService({
+      rpcUrl: 'http://rpc',
+      contractId: 'CABC',
+    });
     jest.spyOn(svc, 'fetchEvents').mockResolvedValue([]);
 
     await svc.poll();
 
-    expect(cursorService.getOrCreate).toHaveBeenCalledWith('testnet', INDEXER_STREAM_CORE_GAME);
+    expect(cursorService.getOrCreate).toHaveBeenCalledWith(
+      'testnet',
+      INDEXER_STREAM_CORE_GAME,
+    );
   });
 });

@@ -31,11 +31,16 @@ export class EventNormalizerService {
     this.maxPayloadBytes = env ? parseInt(env, 10) : DEFAULT_MAX_PAYLOAD_BYTES;
   }
 
-  normalize(network: 'testnet' | 'mainnet', raw: RawSorobanEvent): IngestedEventDto {
+  normalize(
+    network: 'testnet' | 'mainnet',
+    raw: RawSorobanEvent,
+  ): IngestedEventDto {
     return {
       network,
       contractId: String(raw.contractId ?? ''),
-      topic: String(raw.topic ?? '').trim().toLowerCase(),
+      topic: String(raw.topic ?? '')
+        .trim()
+        .toLowerCase(),
       txHash: String(raw.txHash ?? ''),
       ledger: Number(raw.ledger ?? 0),
       eventIndex: Number(raw.eventIndex ?? 0),
@@ -47,7 +52,8 @@ export class EventNormalizerService {
   isValid(event: IngestedEventDto): boolean {
     if (!event.contractId || !event.topic || !event.txHash) return false;
     if (!Number.isInteger(event.ledger) || event.ledger <= 0) return false;
-    if (!Number.isInteger(event.eventIndex) || event.eventIndex < 0) return false;
+    if (!Number.isInteger(event.eventIndex) || event.eventIndex < 0)
+      return false;
     if (!ALLOWED_TOPICS.has(event.topic)) return false;
     if (this.payloadBytes(event.payload) > this.maxPayloadBytes) return false;
     return true;

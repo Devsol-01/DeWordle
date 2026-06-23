@@ -23,4 +23,3 @@ export function computeAuditEventHash(e: AuditEventHashInput): string {
   ]);
   return createHash('sha256').update(json).digest('hex');
 }
-

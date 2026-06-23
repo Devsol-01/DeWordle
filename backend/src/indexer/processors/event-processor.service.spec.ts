@@ -3,21 +3,31 @@ import { ProjectionService } from '../projections/projection.service';
 import { IngestedEventDto } from '../dto/ingested-event.dto';
 import { computeAuditEventHash } from '../audit/event-hash';
 
-const makeEvent = (overrides: Partial<IngestedEventDto> = {}): IngestedEventDto => ({
+const makeEvent = (
+  overrides: Partial<IngestedEventDto> = {},
+): IngestedEventDto => ({
   network: 'testnet',
   contractId: 'CABC',
   topic: 'session_finalized',
   txHash: 'tx1',
   ledger: 10,
   eventIndex: 0,
-  payload: { sessionId: 's1', player: 'p1', dayId: 1, status: 'Finalized', attemptsUsed: 3 },
+  payload: {
+    sessionId: 's1',
+    player: 'p1',
+    dayId: 1,
+    status: 'Finalized',
+    attemptsUsed: 3,
+  },
   observedAt: new Date(),
   ...overrides,
 });
 
 describe('EventProcessorService', () => {
   const makeProcessor = (existingEvent: boolean) => {
-    const projectionService = { apply: jest.fn().mockResolvedValue(true) } as unknown as ProjectionService;
+    const projectionService = {
+      apply: jest.fn().mockResolvedValue(true),
+    } as unknown as ProjectionService;
     const eventsRepo = {
       findOne: jest.fn().mockResolvedValue(existingEvent ? { id: 1 } : null),
       create: jest.fn((e) => e),
@@ -65,11 +75,15 @@ describe('EventProcessorService', () => {
   it('deterministic no-op: processing same event twice returns false on second call', async () => {
     let callCount = 0;
     const eventsRepo = {
-      findOne: jest.fn().mockImplementation(async () => (callCount++ > 0 ? { id: 1 } : null)),
+      findOne: jest
+        .fn()
+        .mockImplementation(async () => (callCount++ > 0 ? { id: 1 } : null)),
       create: jest.fn((e) => e),
       save: jest.fn().mockResolvedValue({}),
     };
-    const projectionService = { apply: jest.fn().mockResolvedValue(true) } as unknown as ProjectionService;
+    const projectionService = {
+      apply: jest.fn().mockResolvedValue(true),
+    } as unknown as ProjectionService;
     const svc = new EventProcessorService(eventsRepo as any, projectionService);
 
     const first = await svc.process(makeEvent());
@@ -86,7 +100,9 @@ describe('ProjectionService', () => {
       create: jest.fn((e) => e),
       save: jest.fn().mockResolvedValue({}),
     };
-    const { ProjectionService: PS } = jest.requireActual('../projections/projection.service');
+    const { ProjectionService: PS } = jest.requireActual(
+      '../projections/projection.service',
+    );
     const svc = new PS(sessionsRepo);
     return { svc, sessionsRepo };
   };

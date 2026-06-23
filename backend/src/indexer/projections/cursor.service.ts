@@ -12,12 +12,23 @@ export class CursorService {
     private readonly cursorRepo: Repository<IndexerCursorEntity>,
   ) {}
 
-  async getOrCreate(network: string, streamKey: string): Promise<IndexerCursorEntity> {
-    const existing = await this.cursorRepo.findOne({ where: { network, streamKey } });
+  async getOrCreate(
+    network: string,
+    streamKey: string,
+  ): Promise<IndexerCursorEntity> {
+    const existing = await this.cursorRepo.findOne({
+      where: { network, streamKey },
+    });
     if (existing) return existing;
 
     return this.cursorRepo.save(
-      this.cursorRepo.create({ network, streamKey, lastLedger: 0, lastTxHash: '', lastEventIndex: 0 }),
+      this.cursorRepo.create({
+        network,
+        streamKey,
+        lastLedger: 0,
+        lastTxHash: '',
+        lastEventIndex: 0,
+      }),
     );
   }
 
@@ -35,7 +46,14 @@ export class CursorService {
   ): Promise<boolean> {
     const cursor = await this.getOrCreate(network, streamKey);
 
-    if (!this.isMonotonicallyGreater(cursor, lastLedger, lastTxHash, lastEventIndex)) {
+    if (
+      !this.isMonotonicallyGreater(
+        cursor,
+        lastLedger,
+        lastTxHash,
+        lastEventIndex,
+      )
+    ) {
       this.logger.warn(
         `Cursor regression rejected for ${network}/${streamKey}: ` +
           `current=${cursor.lastLedger}:${cursor.lastTxHash}:${cursor.lastEventIndex} ` +

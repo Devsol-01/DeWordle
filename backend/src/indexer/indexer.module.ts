@@ -32,6 +32,11 @@ import { IndexerCursorEntity } from './entities/indexer-cursor.entity';
     ReplayAlertService,
     IndexerWorkerService,
   ],
-  exports: [IndexerService, ProjectionService, CursorService, EventNormalizerService],
+  exports: [
+    IndexerService,
+    ProjectionService,
+    CursorService,
+    EventNormalizerService,
+  ],
 })
 export class IndexerModule {}

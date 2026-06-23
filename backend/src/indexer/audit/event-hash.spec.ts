@@ -30,4 +30,3 @@ describe('computeAuditEventHash', () => {
     expect(a).not.toEqual(b);
   });
 });
-

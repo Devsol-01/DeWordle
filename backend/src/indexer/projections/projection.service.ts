@@ -18,12 +18,15 @@ export class ProjectionService {
    * Applies an event to the projection. Idempotent: replaying the same
    * session_finalized event produces the same projection state (upsert by sessionId).
    */
-  async apply(event: IngestedEventDto, context?: IndexerLogContext): Promise<boolean> {
+  async apply(
+    event: IngestedEventDto,
+    context?: IndexerLogContext,
+  ): Promise<boolean> {
     if (event.topic !== 'session_finalized') {
       return false;
     }
 
-    const sessionId = String(event.payload.sessionId ?? '');
+    const sessionId = this.readStringField(event.payload, 'sessionId');
     if (!sessionId) {
       this.logger.warn({
         msg: 'indexer.projection.skipped',
@@ -42,14 +45,23 @@ export class ProjectionService {
       id: existing?.id,
       network: event.network,
       sessionId,
-      player: String(event.payload.player ?? ''),
+      player: this.readStringField(event.payload, 'player'),
       dayId: Number(event.payload.dayId ?? 0),
-      status: String(event.payload.status ?? 'Finalized'),
+      status: this.readStringField(event.payload, 'status', 'Finalized'),
       attemptsUsed: Number(event.payload.attemptsUsed ?? 0),
       finalized: true,
     });
 
     await this.sessionsRepo.save(projection);
     return true;
+  }
+
+  private readStringField(
+    payload: Record<string, unknown>,
+    key: string,
+    fallback = '',
+  ): string {
+    const value = payload[key];
+    return typeof value === 'string' ? value : fallback;
   }
 }

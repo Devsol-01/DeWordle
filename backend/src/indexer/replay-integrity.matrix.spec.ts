@@ -34,7 +34,9 @@ function normalizeTopic(raw: string): string {
 }
 
 function isCoreGameEvent(topic: string): topic is CoreGameTopic {
-  return (CORE_GAME_TOPICS as readonly string[]).includes(normalizeTopic(topic));
+  return (CORE_GAME_TOPICS as readonly string[]).includes(
+    normalizeTopic(topic),
+  );
 }
 
 interface RawEvent {
@@ -79,14 +81,21 @@ function makeIngested(
 
 describe('SC→SDK: event decoding integrity', () => {
   it.each(CORE_GAME_TOPICS)('parseEvent normalises topic "%s"', (topic) => {
-    const decoded = parseEvent({ contractId: 'CTEST', topic, value: { data: 'ok' } });
+    const decoded = parseEvent({
+      contractId: 'CTEST',
+      topic,
+      value: { data: 'ok' },
+    });
     expect(decoded.topic).toBe(topic);
     expect(decoded.contractId).toBe('CTEST');
   });
 
-  it.each(CORE_GAME_TOPICS)('isCoreGameEvent returns true for "%s"', (topic) => {
-    expect(isCoreGameEvent(topic)).toBe(true);
-  });
+  it.each(CORE_GAME_TOPICS)(
+    'isCoreGameEvent returns true for "%s"',
+    (topic) => {
+      expect(isCoreGameEvent(topic)).toBe(true);
+    },
+  );
 
   it('normalizeTopic strips whitespace and lowercases', () => {
     expect(normalizeTopic('  Guess_Submitted  ')).toBe('guess_submitted');
@@ -131,8 +140,16 @@ describe('SDK→BE: replay-safe cursor ordering', () => {
       makeIngested('guess_submitted', 3, 'tx-a', 1),
     ];
     const sorted = [...events].sort(compareEventsByCursor);
-    expect(sorted[0]).toMatchObject({ ledger: 3, txHash: 'tx-a', eventIndex: 0 });
-    expect(sorted[1]).toMatchObject({ ledger: 3, txHash: 'tx-a', eventIndex: 1 });
+    expect(sorted[0]).toMatchObject({
+      ledger: 3,
+      txHash: 'tx-a',
+      eventIndex: 0,
+    });
+    expect(sorted[1]).toMatchObject({
+      ledger: 3,
+      txHash: 'tx-a',
+      eventIndex: 1,
+    });
     expect(sorted[2]).toMatchObject({ ledger: 5 });
   });
 

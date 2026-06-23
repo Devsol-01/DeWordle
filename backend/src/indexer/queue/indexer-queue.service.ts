@@ -8,7 +8,7 @@ export class IndexerQueueService {
   private readonly logger = new Logger(IndexerQueueService.name);
   private readonly buffer: IngestedEventDto[] = [];
 
-  async enqueue(event: IngestedEventDto) {
+  enqueue(event: IngestedEventDto) {
     if (this.buffer.length >= INDEXER_QUEUE_MAX_BUFFER_SIZE) {
       this.logger.warn({
         msg: 'indexer.queue.rejected',
@@ -25,7 +25,9 @@ export class IndexerQueueService {
     this.buffer.push(event);
     this.buffer.sort(compareEventsByCursor);
 
-    this.logger.debug(`Queued event ${event.topic} at ${event.txHash}#${event.eventIndex}`);
+    this.logger.debug(
+      `Queued event ${event.topic} at ${event.txHash}#${event.eventIndex}`,
+    );
     return true;
   }
 

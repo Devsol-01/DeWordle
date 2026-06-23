@@ -98,10 +98,14 @@ export class IndexerService {
 
   async getLagSnapshot(): Promise<IndexerLagSnapshot> {
     const network =
-      (this.configService.get<string>('SOROBAN_NETWORK') as 'testnet' | 'mainnet') ||
-      'testnet';
+      (this.configService.get<string>('SOROBAN_NETWORK') as
+        | 'testnet'
+        | 'mainnet') || 'testnet';
     const rpcUrl = this.configService.get<string>('SOROBAN_RPC_URL');
-    const cursor = await this.cursorService.getOrCreate(network, INDEXER_STREAM_CORE_GAME);
+    const cursor = await this.cursorService.getOrCreate(
+      network,
+      INDEXER_STREAM_CORE_GAME,
+    );
 
     let networkLatestLedger: number | null = null;
     if (rpcUrl) {
@@ -120,7 +124,9 @@ export class IndexerService {
       lastProcessedTxHash: cursor.lastTxHash,
       networkLatestLedger,
       lagLedgers:
-        networkLatestLedger === null ? null : Math.max(networkLatestLedger - cursor.lastLedger, 0),
+        networkLatestLedger === null
+          ? null
+          : Math.max(networkLatestLedger - cursor.lastLedger, 0),
       replaySkips: this.metrics.replaySkips,
       ingestedTotal: this.metrics.ingestedTotal,
       projectionErrors: this.metrics.projectionErrors,
@@ -130,12 +136,17 @@ export class IndexerService {
 
   async poll(context?: IndexerLogContext): Promise<number> {
     const network =
-      (this.configService.get<string>('SOROBAN_NETWORK') as 'testnet' | 'mainnet') ||
-      'testnet';
+      (this.configService.get<string>('SOROBAN_NETWORK') as
+        | 'testnet'
+        | 'mainnet') || 'testnet';
     const rpcUrl = this.configService.get<string>('SOROBAN_RPC_URL');
-    const contractId = this.configService.get<string>('SOROBAN_CORE_GAME_CONTRACT_ID');
+    const contractId = this.configService.get<string>(
+      'SOROBAN_CORE_GAME_CONTRACT_ID',
+    );
 
-    const cycleContext: IndexerLogContext = context ?? { correlationId: randomUUID() };
+    const cycleContext: IndexerLogContext = context ?? {
+      correlationId: randomUUID(),
+    };
 
     if (!rpcUrl || !contractId) {
       this.logger.warn({
@@ -146,7 +157,10 @@ export class IndexerService {
       return 0;
     }
 
-    const cursor = await this.cursorService.getOrCreate(network, INDEXER_STREAM_CORE_GAME);
+    const cursor = await this.cursorService.getOrCreate(
+      network,
+      INDEXER_STREAM_CORE_GAME,
+    );
     this.metrics.pollCycles++;
     this.metrics.lastCursorLedger = cursor.lastLedger;
 
@@ -168,7 +182,11 @@ export class IndexerService {
       cursorEventIndex: cursor.lastEventIndex,
     });
 
-    const rawEvents = await this.fetchEvents(rpcUrl, contractId, cursor.lastLedger);
+    const rawEvents = await this.fetchEvents(
+      rpcUrl,
+      contractId,
+      cursor.lastLedger,
+    );
 
     const normalized = rawEvents
       .map((raw) => this.eventNormalizer.normalize(network, raw))
@@ -229,9 +247,18 @@ export class IndexerService {
     return response.data?.result?.latestLedger ?? 0;
   }
 
-  recordReplaySkip(ledger: number, txHash: string, eventIndex: number, context?: IndexerLogContext) {
+  recordReplaySkip(
+    ledger: number,
+    txHash: string,
+    eventIndex: number,
+    context?: IndexerLogContext,
+  ) {
     this.metrics.replaySkips++;
-    const alert = this.replayAlertService.recordReplayRejection(ledger, txHash, eventIndex);
+    const alert = this.replayAlertService.recordReplayRejection(
+      ledger,
+      txHash,
+      eventIndex,
+    );
     this.logger.warn({
       msg: 'indexer.replay.skip',
       correlationId: context?.correlationId,

@@ -1,7 +1,11 @@
 import { IndexerQueueService } from './indexer-queue.service';
 import { IngestedEventDto } from '../dto/ingested-event.dto';
 
-function makeEvent(ledger: number, txHash: string, eventIndex: number): IngestedEventDto {
+function makeEvent(
+  ledger: number,
+  txHash: string,
+  eventIndex: number,
+): IngestedEventDto {
   return {
     network: 'testnet',
     contractId: 'contract-1',
@@ -16,9 +20,18 @@ function makeEvent(ledger: number, txHash: string, eventIndex: number): Ingested
 
 describe('IndexerQueueService', () => {
   let service: IndexerQueueService;
+  let loggerWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     service = new IndexerQueueService();
+    const logger = (
+      service as unknown as { logger: { warn: (...args: unknown[]) => void } }
+    ).logger;
+    loggerWarnSpy = jest.spyOn(logger, 'warn');
+  });
+
+  afterEach(() => {
+    loggerWarnSpy.mockRestore();
   });
 
   it('drain returns events sorted by ledger -> txHash -> eventIndex', async () => {
@@ -30,10 +43,26 @@ describe('IndexerQueueService', () => {
     const drained = service.drain();
 
     expect(drained).toHaveLength(4);
-    expect(drained[0]).toMatchObject({ ledger: 9, txHash: 'tx-z', eventIndex: 0 });
-    expect(drained[1]).toMatchObject({ ledger: 10, txHash: 'tx-a', eventIndex: 0 });
-    expect(drained[2]).toMatchObject({ ledger: 10, txHash: 'tx-a', eventIndex: 1 });
-    expect(drained[3]).toMatchObject({ ledger: 10, txHash: 'tx-b', eventIndex: 0 });
+    expect(drained[0]).toMatchObject({
+      ledger: 9,
+      txHash: 'tx-z',
+      eventIndex: 0,
+    });
+    expect(drained[1]).toMatchObject({
+      ledger: 10,
+      txHash: 'tx-a',
+      eventIndex: 0,
+    });
+    expect(drained[2]).toMatchObject({
+      ledger: 10,
+      txHash: 'tx-a',
+      eventIndex: 1,
+    });
+    expect(drained[3]).toMatchObject({
+      ledger: 10,
+      txHash: 'tx-b',
+      eventIndex: 0,
+    });
   });
 
   it('drain on empty queue returns empty array', () => {
@@ -68,15 +97,13 @@ describe('IndexerQueueService', () => {
   });
 
   it('rejects events once the bounded buffer is full', async () => {
-    const warnSpy = jest.spyOn((service as { logger: { warn: (...args: unknown[]) => void } }).logger, 'warn');
-
     for (let i = 0; i < 500; i += 1) {
       expect(await service.enqueue(makeEvent(i + 1, `tx-${i}`, 0))).toBe(true);
     }
 
-    await expect(service.enqueue(makeEvent(999, 'tx-overflow', 0))).resolves.toBe(false);
+    expect(service.enqueue(makeEvent(999, 'tx-overflow', 0))).toBe(false);
     expect(service.size()).toBe(500);
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         msg: 'indexer.queue.rejected',
         reason: 'buffer_limit_reached',
