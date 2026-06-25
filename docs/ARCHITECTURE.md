@@ -29,3 +29,9 @@
 - Env configuration is split and still needs stricter schema validation.
 
 See [Stellar migration plan](./STELLAR_MIGRATION.md).
+
+## Deploy Topology
+
+Visual diagrams of how the frontend, backend, indexer, and Soroban
+services connect in local, testnet, and production-like environments
+are documented in [DEPLOY_TOPOLOGY.md](./DEPLOY_TOPOLOGY.md).

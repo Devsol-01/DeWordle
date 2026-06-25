@@ -33,6 +33,12 @@ The following variables are required or optional when running deployment scripts
 - Variable names must match exactly what is used in `soroban/scripts/deploy/deploy-testnet.sh` and `soroban/scripts/invoke/invoke-core-game.sh`.
 - Run `grep -r 'STELLAR_\|CONTRACT_' soroban/scripts/` to verify alignment after any script changes.
 
+## Deploy Topology
+
+See [DEPLOY_TOPOLOGY.md](./DEPLOY_TOPOLOGY.md) for visual diagrams of
+how Soroban contracts interact with the frontend, backend, and indexer
+across local, testnet, and production-like deployments.
+
 ## Next Enhancements
 - automated contract hash verification
 - per-environment deploy manifests
