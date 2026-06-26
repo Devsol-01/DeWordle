@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -45,5 +46,37 @@ export class IndexerController {
     });
 
     return { status: 'accepted' };
+  }
+
+  @Post('reset/cursor')
+  @ApiOperation({
+    summary: 'Reset indexer cursor for a network/stream',
+    description:
+      'Resets the cursor to genesis for recovery. Requires confirm=true query param as a safety guard.',
+  })
+  async resetCursor(
+    @Query('network') network: string,
+    @Query('streamKey') streamKey: string,
+    @Query('confirm') confirm: string,
+  ) {
+    if (confirm !== 'true') {
+      return { status: 'refused', reason: 'confirm=true required' };
+    }
+    await this.indexerService.resetCursor(network, streamKey);
+    return { status: 'ok', action: 'cursor_reset', network, streamKey };
+  }
+
+  @Post('reset/projections')
+  @ApiOperation({
+    summary: 'Clear all projection data',
+    description:
+      'Deletes all projection rows. Requires confirm=true query param as a safety guard.',
+  })
+  async resetProjections(@Query('confirm') confirm: string) {
+    if (confirm !== 'true') {
+      return { status: 'refused', reason: 'confirm=true required' };
+    }
+    await this.indexerService.resetProjections();
+    return { status: 'ok', action: 'projections_reset' };
   }
 }

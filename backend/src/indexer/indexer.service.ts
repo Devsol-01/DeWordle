@@ -247,6 +247,29 @@ export class IndexerService {
     return response.data?.result?.latestLedger ?? 0;
   }
 
+  /** Resets the indexer cursor for a given network/stream to genesis. */
+  async resetCursor(network: string, streamKey: string): Promise<void> {
+    await this.cursorService.reset(network, streamKey);
+    this.metrics.lastCursorLedger = 0;
+    this.metrics.ingestedTotal = 0;
+    this.metrics.replaySkips = 0;
+    this.metrics.projectionErrors = 0;
+    this.logger.warn({
+      msg: 'indexer.cursor.reset',
+      network,
+      streamKey,
+    });
+  }
+
+  /** Clears all projection data from the database. */
+  async resetProjections(): Promise<void> {
+    await this.cursorService.resetProjections();
+    this.metrics.projectionErrors = 0;
+    this.logger.warn({
+      msg: 'indexer.projections.reset',
+    });
+  }
+
   recordReplaySkip(
     ledger: number,
     txHash: string,
