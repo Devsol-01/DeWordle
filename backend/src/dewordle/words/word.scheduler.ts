@@ -10,6 +10,26 @@ import { ConfigService } from '@nestjs/config';
 import { Word } from 'src/entities/word.entity';
 import moment from 'moment-timezone';
 
+/**
+ * Legacy daily word scheduler.
+ *
+ * This scheduler relies on the `words` table's `isDaily` and `dailyDate`
+ * columns to select one word per calendar day. During the Soroban migration
+ * the canonical daily word selection will move to a Soroban contract that
+ * deterministically selects a word from the onchain word pool.
+ *
+ * Transitional behaviour:
+ * - Until the Soroban daily puzzle contract is fully deployed and the
+ *   indexer projects daily puzzle state, this legacy cron remains active.
+ * - Once the Soroban flow is stable (target: Wave 6), this entire class
+ *   should be replaced by the Soroban-native schedule. All direct DB
+ *   word-selection logic will be removed.
+ * - For now, the scheduler is intentionally left as-is to avoid breaking
+ *   the daily puzzle endpoint during migration overlap.
+ *
+ * @deprecated Will be removed after Soroban daily puzzle contract
+ *   deployment is verified and the indexer projects daily puzzle state.
+ */
 @Injectable()
 export class WordScheduler implements OnModuleInit {
   private readonly logger = new Logger(WordScheduler.name);

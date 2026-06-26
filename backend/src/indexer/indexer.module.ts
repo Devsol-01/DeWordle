@@ -4,6 +4,7 @@ import { IndexerController } from './indexer.controller';
 import { IndexerService } from './indexer.service';
 import { EventProcessorService } from './processors/event-processor.service';
 import { EventNormalizerService } from './processors/event-normalizer.service';
+import { AdminRegistryProcessorService } from './processors/admin-registry-processor.service';
 import { ProjectionService } from './projections/projection.service';
 import { CursorService } from './projections/cursor.service';
 import { IndexerQueueService } from './queue/indexer-queue.service';
@@ -31,6 +32,7 @@ import { RewardSummaryController } from './reward-summary.controller';
     IndexerService,
     EventProcessorService,
     EventNormalizerService,
+    AdminRegistryProcessorService,
     ProjectionService,
     CursorService,
     IndexerQueueService,
@@ -44,8 +46,7 @@ import { RewardSummaryController } from './reward-summary.controller';
     ProjectionService,
     CursorService,
     EventNormalizerService,
-    RegistrySnapshotService,
-    RewardSummaryService,
+    AdminRegistryProcessorService,
   ],
 })
 export class IndexerModule {}

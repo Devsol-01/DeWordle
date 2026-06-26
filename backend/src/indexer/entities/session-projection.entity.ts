@@ -8,6 +8,11 @@ import {
 
 @Entity('session_projections')
 @Index(['network', 'sessionId'], { unique: true })
+@Index(['player'])
+@Index(['dayId'])
+@Index(['status'])
+@Index(['network', 'player'])
+@Index(['network', 'status'])
 export class SessionProjectionEntity {
   @PrimaryGeneratedColumn()
   id: number;
