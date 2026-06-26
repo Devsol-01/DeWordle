@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { validateEnv } from './config/env.validation';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TestEntity } from './entities/test.entity';
+import { SessionProjectionEntity } from './indexer/entities/session-projection.entity';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { GamesModule } from './games/games.module';
@@ -14,12 +16,15 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MetricsModule } from './dewordle/metrics/metrics.module';
 import { MetricsController } from './dewordle/metrics/metrics.controller';
 import { IndexerModule } from './indexer/indexer.module';
+import { ReadApiController } from './common/read-api.controller';
+import { DeprecationController } from './common/deprecation.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.development'],
+      validate: validateEnv,
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
@@ -47,7 +52,7 @@ import { IndexerModule } from './indexer/indexer.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([TestEntity]),
+    TypeOrmModule.forFeature([TestEntity, SessionProjectionEntity]),
     AuthModule,
     UserModule,
     GamesModule,
@@ -55,7 +60,7 @@ import { IndexerModule } from './indexer/indexer.module';
     MetricsModule,
     IndexerModule,
   ],
-  controllers: [AppController, MetricsController],
+  controllers: [AppController, MetricsController, ReadApiController, DeprecationController],
   providers: [AppService],
 })
 export class AppModule {}

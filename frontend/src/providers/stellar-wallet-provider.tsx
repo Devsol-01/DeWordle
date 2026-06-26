@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -58,6 +60,48 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [network, setNetwork] = useState<StellarNetwork>(getDefaultNetwork());
   const [status, setStatus] = useState<TxLifecycleStatus>(defaultStatus);
+
+  // Set of callbacks notified when the active wallet account changes.
+  const switchListenersRef = useRef<Set<(addr: string) => void>>(new Set());
+
+  const onAccountSwitch = useCallback((cb: (newAddress: string) => void) => {
+    switchListenersRef.current.add(cb);
+    return () => switchListenersRef.current.delete(cb);
+  }, []);
+
+  // Poll Freighter for address changes on tab focus / visibility change.
+  // This is the only reliable way to detect Freighter account switches since
+  // the extension doesn't emit DOM events when the user switches accounts.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkForAccountSwitch = async () => {
+      if (!connected) return;
+      const freighter = window.freighterApi;
+      if (!freighter?.getAddress) return;
+
+      try {
+        const response = await freighter.getAddress();
+        if (!response || response.error || !response.address) return;
+        const nextAddress = response.address;
+
+        if (nextAddress !== address) {
+          setAddress(nextAddress);
+          setStatus(defaultStatus);
+          switchListenersRef.current.forEach((cb) => cb(nextAddress));
+        }
+      } catch {
+        // Silently ignore polling errors; they resolve on the next successful poll.
+      }
+    };
+
+    window.addEventListener("focus", checkForAccountSwitch);
+    document.addEventListener("visibilitychange", checkForAccountSwitch);
+    return () => {
+      window.removeEventListener("focus", checkForAccountSwitch);
+      document.removeEventListener("visibilitychange", checkForAccountSwitch);
+    };
+  }, [connected, address]);
 
   const connect = useCallback(async () => {
     if (typeof window === "undefined") {
