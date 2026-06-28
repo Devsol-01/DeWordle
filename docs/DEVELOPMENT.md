@@ -1,5 +1,36 @@
 # Development Guide
 
+## Local Infrastructure (Docker Compose)
+
+A shared Docker Compose stack covers Postgres, the NestJS backend, and an optional
+Soroban RPC caching proxy. Use it to bring up a consistent local environment without
+installing Postgres directly.
+
+```bash
+# Postgres only (most common — run the backend outside Docker for hot-reload)
+./scripts/infra-up.sh postgres
+
+# Postgres + API container
+./scripts/infra-up.sh backend
+
+# Full stack including the RPC proxy
+./scripts/infra-up.sh full
+
+# Stop everything
+./scripts/infra-up.sh down
+```
+
+After the first start (or after resetting the volume), run migrations:
+
+```bash
+cd backend && npm run typeorm:migration:run
+```
+
+See [docs/LOCAL_INFRA_STACK.md](./LOCAL_INFRA_STACK.md) for the full profile
+reference, environment variable table, and known limitations.
+
+---
+
 ## Phase 3 One-Command Validation
 
 Run the full Phase 3 validation suite before opening a PR:

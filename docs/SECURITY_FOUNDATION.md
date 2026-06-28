@@ -122,3 +122,14 @@ Covers `core_game`, `rewards`, `achievements` Soroban contracts and the backend 
 - Verify the indexer queue rejects burst traffic once the bounded buffer is full.
 - Run the workflow secret-scope policy check before merging workflow changes.
 - Keep security notes and wave docs aligned with any behavior changes.
+
+---
+
+## Audit Log Retention and Tamper-Detection
+
+See [AUDIT_LOG_RETENTION.md](./AUDIT_LOG_RETENTION.md) for:
+
+- Retention windows for `ingested_events` rows, CI security scan artifacts, and operational logs.
+- How `auditHash` is computed and how to verify a stored row has not been tampered with.
+- What a hash mismatch means operationally and how to respond.
+- Backfill procedure for rows saved before hash computation was added.
