@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import {
   IsEnum,
   IsInt,
@@ -8,6 +9,11 @@ import {
   Max,
   Min,
   validateSync,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+  registerDecorator,
+  ValidationOptions,
 } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
@@ -20,6 +26,44 @@ export enum NodeEnv {
 export enum StellarNetwork {
   Testnet = 'testnet',
   Mainnet = 'mainnet',
+}
+
+@ValidatorConstraint({ name: 'isSafeRpcUrl', async: false })
+export class IsSafeRpcUrlConstraint implements ValidatorConstraintInterface {
+  validate(text: string, args: ValidationArguments) {
+    if (!text) return false;
+    try {
+      const url = new URL(text);
+      const env = (args.object as any).NODE_ENV;
+      if (env === NodeEnv.Production || env === NodeEnv.Test) {
+        return url.protocol === 'https:';
+      }
+      
+      if (url.protocol === 'http:') {
+        return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+      }
+      
+      return url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    return 'SOROBAN_RPC_URL must be a secure https endpoint or a local http endpoint (localhost) in development.';
+  }
+}
+
+export function IsSafeRpcUrl(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: IsSafeRpcUrlConstraint,
+    });
+  };
 }
 
 class EnvironmentVariables {
@@ -63,12 +107,12 @@ class EnvironmentVariables {
   JWT_SECRET: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   FRONTEND_URL: string = 'http://localhost:3000';
 
   // ── Soroban / Indexer ─────────────────────────────────────────────────────
   @IsNotEmpty()
-  @IsUrl()
+  @IsSafeRpcUrl()
   SOROBAN_RPC_URL: string;
 
   @IsNotEmpty()
