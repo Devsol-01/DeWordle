@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type Repository } from 'typeorm';
-import { type Game } from './entities/game.entity';
+import { Game } from './entities/game.entity';
 import { type CreateGameDto } from './dto/create-game.dto';
 import { type UpdateGameDto } from './dto/update-game.dto';
 

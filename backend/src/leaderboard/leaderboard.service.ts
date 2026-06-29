@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type Repository } from 'typeorm';
-import { type LeaderboardEntry } from './leaderboard-entry.entity';
+import { LeaderboardEntry } from './leaderboard-entry.entity';
 import { type User } from '../auth/entities/user.entity';
 import { type Game } from '../games/entities/game.entity';
 

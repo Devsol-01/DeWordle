@@ -1,4 +1,4 @@
-import { type GameSession } from '../../game-sessions/entities/game-session.entity';
+import { GameSession } from '../../game-sessions/entities/game-session.entity';
 import {
   Column,
   Entity,

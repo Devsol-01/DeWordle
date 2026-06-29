@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
-import { type Game } from '../games/entities/game.entity';
+import { Game } from '../games/entities/game.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type Repository } from 'typeorm';
 
