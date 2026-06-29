@@ -6,6 +6,10 @@ import { EventProcessorService } from './processors/event-processor.service';
 import { EventNormalizerService } from './processors/event-normalizer.service';
 import { CursorService } from './projections/cursor.service';
 import { compareEventsByCursor } from './processors/event-ordering.util';
+import {
+  validateRpcResponseShape,
+  diagnoseMalformedEvent,
+} from './processors/rpc-response.validator';
 import { randomUUID } from 'crypto';
 import { INDEXER_STREAM_CORE_GAME } from './indexer.constants';
 import { ReplayAlertService } from './queue/replay-alert.service';
@@ -188,7 +192,20 @@ export class IndexerService {
       cursor.lastLedger,
     );
 
-    const normalized = rawEvents
+    const structurallyValidEvents = rawEvents.filter((raw, idx) => {
+      const diagnostic = diagnoseMalformedEvent(raw, idx);
+      if (diagnostic) {
+        this.logger.warn({
+          msg: 'indexer.rpc.malformed_event',
+          correlationId: cycleContext.correlationId,
+          ...diagnostic,
+        });
+        return false;
+      }
+      return true;
+    });
+
+    const normalized = structurallyValidEvents
       .map((raw) => this.eventNormalizer.normalize(network, raw))
       .filter((e) => this.eventNormalizer.isValid(e))
       .sort(compareEventsByCursor);
@@ -224,11 +241,11 @@ export class IndexerService {
       },
     };
 
-    const response = await axios.post<{
-      result?: { events?: Record<string, unknown>[] };
-    }>(rpcUrl, body, { timeout: 10_000 });
+    const response = await axios.post<unknown>(rpcUrl, body, {
+      timeout: 10_000,
+    });
 
-    return response.data?.result?.events ?? [];
+    return validateRpcResponseShape(response.data);
   }
 
   async fetchLatestLedger(rpcUrl: string): Promise<number> {
