@@ -6,6 +6,7 @@ const VALID_BASE: Record<string, unknown> = {
   DB_PASSWORD: 'secret',
   DB_NAME: 'dewordle',
   JWT_SECRET: 'supersecret',
+  FRONTEND_URL: 'http://example.com',
   SOROBAN_RPC_URL: 'https://soroban-testnet.stellar.org',
   SOROBAN_CORE_GAME_CONTRACT_ID: 'CAABC123',
 };
@@ -50,5 +51,43 @@ describe('validateEnv', () => {
 
   it('collects all missing-field errors in one throw', () => {
     expect(() => validateEnv({})).toThrow('Environment validation failed');
+  });
+
+  describe('IsSafeRpcUrl validation', () => {
+    it('allows https in development', () => {
+      expect(() =>
+        validateEnv({ ...VALID_BASE, NODE_ENV: 'development', SOROBAN_RPC_URL: 'https://testnet.local' }),
+      ).not.toThrow();
+    });
+
+    it('allows http://localhost in development', () => {
+      expect(() =>
+        validateEnv({ ...VALID_BASE, NODE_ENV: 'development', SOROBAN_RPC_URL: 'http://localhost:8000' }),
+      ).not.toThrow();
+    });
+
+    it('allows http://127.0.0.1 in development', () => {
+      expect(() =>
+        validateEnv({ ...VALID_BASE, NODE_ENV: 'development', SOROBAN_RPC_URL: 'http://127.0.0.1:8000' }),
+      ).not.toThrow();
+    });
+
+    it('rejects http://example.com in development', () => {
+      expect(() =>
+        validateEnv({ ...VALID_BASE, NODE_ENV: 'development', SOROBAN_RPC_URL: 'http://example.com:8000' }),
+      ).toThrow('SOROBAN_RPC_URL must be a secure https endpoint or a local http endpoint (localhost) in development');
+    });
+
+    it('rejects http://localhost in production', () => {
+      expect(() =>
+        validateEnv({ ...VALID_BASE, NODE_ENV: 'production', SOROBAN_RPC_URL: 'http://localhost:8000' }),
+      ).toThrow('SOROBAN_RPC_URL must be a secure https endpoint');
+    });
+
+    it('rejects http://example.com in test', () => {
+      expect(() =>
+        validateEnv({ ...VALID_BASE, NODE_ENV: 'test', SOROBAN_RPC_URL: 'http://example.com' }),
+      ).toThrow('SOROBAN_RPC_URL must be a secure https endpoint');
+    });
   });
 });
