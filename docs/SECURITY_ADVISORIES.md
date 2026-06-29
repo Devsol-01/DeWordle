@@ -20,3 +20,14 @@ This file tracks active security advisories in the `backend` dependency tree tha
   - `typeorm`
   - `nodemailer`
   - `validator`
+
+### 2. `next` & `postcss` (Multiple Critical & High Vulnerabilities)
+- **Current Version:** `9.3.4-canary.0` - `16.3.0-canary.5` (Targeting `15.4.4`)
+- **Severity:** Critical
+- **Vulnerabilities:**
+  - Multiple SSRF, XSS, Cache Poisoning, and DoS vulnerabilities in Server Components and Image Optimization.
+- **Blocker:** Addressing these vulnerabilities requires forcing an update to `next@15.5.19`. Bumping `next` involves breaking changes to the App Router and Server Components architecture, requiring an extensive codebase migration that is currently out of scope. We must delay this upgrade until a major frontend framework version migration is planned.
+
+## Remediation Steps Completed (Frontend)
+- All backwards-compatible, auto-fixable advisories were resolved via `npm audit fix --workspaces=false` (this cleared out vulnerabilities in `fast-xml-parser`, `flatted`, `js-yaml`, `minimatch`, `picomatch`, `tar`, and `tmp`).
+- Added type narrowing fixes to TypeScript interfaces affected by strict mode dependency resolution.

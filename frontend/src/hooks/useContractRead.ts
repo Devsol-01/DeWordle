@@ -76,8 +76,8 @@ export function useDayConfig(dayId: number | null, network: StellarNetwork = "te
     let cancelled = false;
     set(null);
 
-    measureProjectionFetch<DayConfig>(`dayConfig:${dayId}`, () => client.getDayConfig(dayId))
-      .then((data: DayConfig) => {
+    measureProjectionFetch<DayConfig | null>(`dayConfig:${dayId}`, () => client.getDayConfig(dayId))
+      .then((data: DayConfig | null) => {
         if (!cancelled) set(data);
       })
       .catch((err: unknown) => {
@@ -106,8 +106,8 @@ export function useSession(sessionId: string | null, network: StellarNetwork = "
     let cancelled = false;
     set(null);
 
-    measureProjectionFetch<Session>(`session:${sessionId}`, () => client.getSession(sessionId))
-      .then((data: Session) => {
+    measureProjectionFetch<Session | null>(`session:${sessionId}`, () => client.getSession(sessionId))
+      .then((data: Session | null) => {
         if (!cancelled) set(data);
       })
       .catch((err: unknown) => {
