@@ -35,4 +35,4 @@
 - [ ] No cross-track changes without explicit note
 - [ ] Architectural changes reflected in docs or ADR (if applicable)
 
-<!-- Reviewer: see docs/wave/REVIEWER_PLAYBOOK.md for lane assignments and SLA targets -->
+<!-- Reviewer: see ../docs/wave/REVIEWER_PLAYBOOK.md for lane assignments and SLA targets -->

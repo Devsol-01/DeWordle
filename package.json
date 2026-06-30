@@ -26,6 +26,7 @@
     "backup:projection": "./scripts/backup-projection-data.sh",
     "restore:projection": "./scripts/restore-projection-data.sh",
     "registry:validate": "node scripts/validate-registry-bundle.js",
-    "rpc:proxy": "node scripts/rpc-proxy.js"
+    "rpc:proxy": "node scripts/rpc-proxy.js",
+    "docs:linkcheck": "node scripts/scan-markdown-links.js"
   }
 }
